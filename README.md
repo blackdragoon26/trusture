@@ -83,7 +83,7 @@ participant Ledger
   - `signature.sig` (signed metadata)
   - `anchor_receipt.json` (public chain tx)
 
-**Auditor Verification:**
+**Verification Process:**
 - Verifies NGO’s digital signature
 - Recomputes hashes & proofs
 - Cross-checks with anchor root on public blockchain
