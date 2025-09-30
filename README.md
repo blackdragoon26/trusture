@@ -19,7 +19,6 @@ It ensures that every donation, disbursement, invoice, and field proof is:
 ### Frontends
 - **Donor Portal:** Donation initiation, dashboards
 - **NGO Admin Portal:** Upload documents, reconcile funds
-- **Vendor Portal:** Supplier-signed invoices
 - **Field App:** Geo-tagged proof of delivery
 
 ### Core Services
@@ -148,7 +147,6 @@ participant Ledger
 - **Donors:** Make donations, track flows
 - **NGOs:** Manage funds, upload documents
 - **Vendors:** Issue cryptographically signed invoices
-- **Auditors:** Verify exported snapshots against blockchain anchors
 - **Regulators:** Receive reports, ensure compliance
 
 ---
