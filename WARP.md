@@ -11,17 +11,20 @@ Trusture is a blockchain-based decentralized framework for secure, transparent, 
 ### Backend (Go)
 
 ```bash
-# Build and run the main Go application
+# Run the demo application (existing functionality)
 go run cmd/main.go
 
-# Build the binary
+# Run the API server (production-ready HTTP API)
+go run cmd/api/main.go
+
+# Build the demo binary
 go build -o trusture cmd/main.go
 
-# Run the built binary (Windows)
-./trusture.exe
+# Build the API server binary
+go build -o trusture-api cmd/api/main.go
 
 # Run with verbose output
-go run -v cmd/main.go
+go run -v cmd/api/main.go
 
 # Format code
 go fmt ./...
@@ -29,12 +32,18 @@ go fmt ./...
 # Vet code for potential issues
 go vet ./...
 
-# Run tests (when available)
+# Run tests
 go test ./...
+
+# Run tests with coverage
+go test -cover ./...
 
 # Install dependencies
 go mod tidy
 go mod download
+
+# Generate Swagger documentation
+swag init -g cmd/api/main.go -o docs/
 ```
 
 ### Frontend (React + Vite)
@@ -75,28 +84,44 @@ cd Frontend && npm run dev
 
 The Trusture framework consists of several key architectural layers:
 
-1. **Blockchain Layer**: Custom blockchain implementation for donations and expenditures
-2. **Smart Contracts**: Polygon integration with cryptographic anchoring
-3. **Entity Management**: NGOs, Donors, and Auditors with KYC verification
-4. **Transparency Engine**: Real-time scoring and rating system
-5. **Frontend Dashboards**: React-based interfaces for different user roles
+1. **HTTP API Server**: Production-ready REST API with JWT authentication
+2. **Blockchain Layer**: Custom blockchain implementation for donations and expenditures
+3. **Smart Contracts**: Polygon integration with cryptographic anchoring
+4. **Entity Management**: NGOs, Donors, and Auditors with KYC verification
+5. **Transparency Engine**: Real-time scoring and rating system
+6. **Database Layer**: PostgreSQL with GORM ORM for data persistence
+7. **Frontend Dashboards**: React-based interfaces for different user roles
 
 ### Backend Architecture (Go)
 
 The Go backend is organized into the following package structure:
 
 ```
+cmd/
+├── api/main.go       # HTTP API server entry point
+└── main.go           # Demo application entry point
 pkg/
-├── blockchain/        # Custom blockchain implementation
+├── auth/             # JWT authentication and middleware
+├── blockchain/       # Custom blockchain implementation
+├── config/           # Environment configuration management
 ├── crypto/           # Cryptographic primitives (ZK proofs, multisig)
+├── database/         # Database models and repositories (GORM)
 ├── entities/         # Core business entities (NGO, Donor, Auditor)
+├── middleware/       # HTTP middleware (logging, CORS, etc.)
 ├── platform/         # Main platform orchestrator
 ├── polygon/          # Polygon blockchain integration
+├── server/           # HTTP server and API handlers
 └── transactions/     # Transaction processing (donations, expenditures)
+docs/                 # API documentation (Swagger)
 ```
 
 #### Key Components:
 
+- **HTTP API Server** (`cmd/api/`, `pkg/server/`): Production REST API with authentication and middleware
+- **Authentication System** (`pkg/auth/`): JWT-based authentication with bcrypt password hashing
+- **Database Layer** (`pkg/database/`): PostgreSQL integration with GORM ORM and repositories
+- **Configuration Management** (`pkg/config/`): Environment-based configuration with .env support
+- **Middleware Stack** (`pkg/middleware/`): HTTP middleware for logging, CORS, security, and rate limiting
 - **Platform Layer** (`pkg/platform/`): Central orchestrator that manages all system interactions
 - **Blockchain Engine** (`pkg/blockchain/`): Custom permissioned blockchain for transaction recording
 - **Entity Management** (`pkg/entities/`): Business logic for NGOs, donors, and auditors

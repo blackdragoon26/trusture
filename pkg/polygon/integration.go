@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"math/rand" as mathrand
 	"sync"
 	"time"
 )
@@ -125,7 +126,7 @@ func (pi *PolygonIntegration) AnchorBlockHash(blockHash, ngoID, chainType string
 	// Generate simulated transaction hash
 	simulatedTxHash := generateTransactionHash()
 	blockNumber := generateBlockNumber()
-	gasUsed := int64(21000 + rand.Intn(50000))
+	gasUsed := int64(21000 + mathrand.Intn(50000))
 
 	anchorResult := AnchorResult{
 		PolygonTxHash: simulatedTxHash,
@@ -291,7 +292,7 @@ func generateTransactionHash() string {
 func generateBlockNumber() int64 {
 	// Generate a realistic block number
 	baseBlock := int64(50000000)
-	randomOffset := rand.Int63n(1000000)
+	randomOffset := mathrand.Int63n(1000000)
 	return baseBlock + randomOffset
 }
 
