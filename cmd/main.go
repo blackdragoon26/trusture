@@ -6,11 +6,10 @@ import (
 	"math/big"
 	"ngo-transparency-platform/pkg/entities"
 	"ngo-transparency-platform/pkg/platform"
-	"time"
 )
 
 func main() {
-	fmt.Println("=== Enhanced NGO Transparency Platform Demo ===\n")
+	fmt.Println("=== Enhanced NGO Transparency Platform Demo ===")
 
 	// Initialize platform
 	ngoPlat := platform.NewNGOTransparencyPlatform()
@@ -224,11 +223,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if auditorStats, ok := auditorDashboard.(entities.AuditorStats); ok {
-		fmt.Printf("Total Audits: %d\n", auditorStats.TotalAudits)
-		fmt.Printf("Approval Rate: %s\n", auditorStats.ApprovalRate)
-		fmt.Printf("Average Compliance Score: %.1f%%\n", auditorStats.AverageComplianceScore)
-		fmt.Printf("Rating: %.2f/5.0\n", auditorStats.Rating)
+	if auditorDashboard != nil {
+		if stats, ok := auditorDashboard["stats"].(entities.AuditorStats); ok {
+			fmt.Printf("Total Audits: %d\n", stats.TotalAudits)
+			fmt.Printf("Approval Rate: %s\n", stats.ApprovalRate)
+			fmt.Printf("Average Compliance Score: %.1f%%\n", stats.AverageComplianceScore)
+			fmt.Printf("Rating: %.2f/5.0\n", stats.Rating)
+		}
 	}
 
 	// Platform Statistics

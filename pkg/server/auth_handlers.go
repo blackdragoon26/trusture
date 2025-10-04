@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -289,7 +290,7 @@ func (s *Server) createAuditorEntity(userID uint, req RegisterRequest) (string, 
 
 	// Set specializations
 	if len(req.Specializations) > 0 {
-		specializationsJSON, _ := database.GetDB().Statement.Quote(req.Specializations)
+		specializationsJSON, _ := json.Marshal(req.Specializations)
 		auditorModel.Specializations = string(specializationsJSON)
 	}
 

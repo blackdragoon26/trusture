@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
-	"math/rand" as mathrand
+	mathrand "math/rand"
 	"sync"
 	"time"
 )

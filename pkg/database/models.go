@@ -3,7 +3,6 @@ package database
 import (
 	"time"
 	"encoding/json"
-	"gorm.io/gorm"
 )
 
 // User represents the base user model

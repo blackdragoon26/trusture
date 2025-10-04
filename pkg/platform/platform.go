@@ -483,5 +483,11 @@ func (p *NGOTransparencyPlatform) GetAuditorDashboard(auditorID string) (map[str
 		return nil, fmt.Errorf("auditor not found")
 	}
 
-	return auditor.GetAuditorStats(), nil
+	stats := auditor.GetAuditorStats()
+	recentAudits := auditor.GetRecentAudits(5)
+
+	return map[string]interface{}{
+		"stats":         stats,
+		"recent_audits": recentAudits,
+	}, nil
 }

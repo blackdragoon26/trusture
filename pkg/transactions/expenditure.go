@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 )
 
