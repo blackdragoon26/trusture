@@ -41,17 +41,17 @@ type AuditorValidation struct {
 
 // ExpenditureTransaction represents an expenditure transaction
 type ExpenditureTransaction struct {
-	TransactionID       string             `json:"transaction_id"`
-	NGOID               string             `json:"ngo_id"`
-	Amount              float64            `json:"amount"`
-	Category            string             `json:"category"`
-	Description         string             `json:"description"`
-	Timestamp           time.Time          `json:"timestamp"`
-	InvoiceDetails      InvoiceDetails     `json:"invoice_details"`
-	Attachments         []Attachment       `json:"attachments"`
-	Status              string             `json:"status"`
-	AuditorValidation   *AuditorValidation `json:"auditor_validation,omitempty"`
-	ComplianceScore     float64            `json:"compliance_score"`
+	TransactionID     string             `json:"transaction_id"`
+	NGOID             string             `json:"ngo_id"`
+	Amount            float64            `json:"amount"`
+	Category          string             `json:"category"`
+	Description       string             `json:"description"`
+	Timestamp         time.Time          `json:"timestamp"`
+	InvoiceDetails    InvoiceDetails     `json:"invoice_details"`
+	Attachments       []Attachment       `json:"attachments"`
+	Status            string             `json:"status"`
+	AuditorValidation *AuditorValidation `json:"auditor_validation,omitempty"`
+	ComplianceScore   float64            `json:"compliance_score"`
 }
 
 // NewExpenditureTransaction creates a new expenditure transaction
@@ -127,36 +127,41 @@ func (et *ExpenditureTransaction) calculateComplianceScore() float64 {
 	return min(score, maxScore)
 }
 
-// ValidateByAuditor validates the transaction by an auditor
-func (et *ExpenditureTransaction) ValidateByAuditor(auditorID string, isValid bool, remarks string, auditScore *float64) *AuditorValidation {
-	finalAuditScore := et.ComplianceScore
-	if auditScore != nil {
-		finalAuditScore = *auditScore
+// ValidateByAuditor validates the expenditure by an auditor
+func (et *ExpenditureTransaction) ValidateByAuditor(auditorID string, isValid bool, remarks string, score *float64) {
+	if score == nil {
+		defaultScore := et.calculateComplianceScore()
+		score = &defaultScore
 	}
 
-	// Generate signature for auditor validation
-	signatureData := fmt.Sprintf("%s%s%t%d", auditorID, et.TransactionID, isValid, time.Now().UnixNano())
-	hash := sha256.Sum256([]byte(signatureData))
+	// Create validation signature
+	hashData := fmt.Sprintf("%s|%s|%t|%s|%f|%d",
+		et.TransactionID,
+		auditorID,
+		isValid,
+		remarks,
+		*score,
+		time.Now().Unix(),
+	)
+	hash := sha256.Sum256([]byte(hashData))
 	signature := hex.EncodeToString(hash[:])
 
-	validation := &AuditorValidation{
+	et.AuditorValidation = &AuditorValidation{
 		AuditorID:  auditorID,
 		IsValid:    isValid,
 		Remarks:    remarks,
-		AuditScore: finalAuditScore,
+		AuditScore: *score,
 		Timestamp:  time.Now(),
 		Signature:  signature,
 	}
 
-	et.AuditorValidation = validation
-
 	if isValid {
 		et.Status = "validated"
+		et.ComplianceScore = *score
 	} else {
 		et.Status = "rejected"
+		et.ComplianceScore = 0
 	}
-
-	return validation
 }
 
 // VerifyGSTIN validates GSTIN format
@@ -242,16 +247,16 @@ func (et *ExpenditureTransaction) GetTransactionSummary() map[string]interface{}
 // GetInvoiceInfo returns detailed invoice information
 func (et *ExpenditureTransaction) GetInvoiceInfo() map[string]interface{} {
 	return map[string]interface{}{
-		"invoice_number":       et.InvoiceDetails.InvoiceNumber,
-		"gstin":                et.InvoiceDetails.GSTIN,
-		"vendor_name":          et.InvoiceDetails.VendorName,
-		"vendor_gstin":         et.InvoiceDetails.VendorGSTIN,
-		"invoice_date":         et.InvoiceDetails.InvoiceDate,
-		"documents":            et.InvoiceDetails.Documents,
-		"bank_transaction_id":  et.InvoiceDetails.BankTransactionID,
-		"cheque_number":        et.InvoiceDetails.ChequeNumber,
-		"gstin_valid":          et.VerifyGSTIN(et.InvoiceDetails.GSTIN),
-		"vendor_gstin_valid":   et.VerifyGSTIN(et.InvoiceDetails.VendorGSTIN),
+		"invoice_number":      et.InvoiceDetails.InvoiceNumber,
+		"gstin":               et.InvoiceDetails.GSTIN,
+		"vendor_name":         et.InvoiceDetails.VendorName,
+		"vendor_gstin":        et.InvoiceDetails.VendorGSTIN,
+		"invoice_date":        et.InvoiceDetails.InvoiceDate,
+		"documents":           et.InvoiceDetails.Documents,
+		"bank_transaction_id": et.InvoiceDetails.BankTransactionID,
+		"cheque_number":       et.InvoiceDetails.ChequeNumber,
+		"gstin_valid":         et.VerifyGSTIN(et.InvoiceDetails.GSTIN),
+		"vendor_gstin_valid":  et.VerifyGSTIN(et.InvoiceDetails.VendorGSTIN),
 	}
 }
 
@@ -316,11 +321,11 @@ func (et *ExpenditureTransaction) GetComplianceBreakdown() map[string]interface{
 	daysDiff := time.Since(et.InvoiceDetails.InvoiceDate).Hours() / 24
 	isRecent := daysDiff <= 90
 	components["invoice_recency"] = map[string]interface{}{
-		"score":      getScore(isRecent, 5),
-		"max_score":  5,
-		"status":     isRecent,
-		"days_old":   int(daysDiff),
-		"threshold":  90,
+		"score":     getScore(isRecent, 5),
+		"max_score": 5,
+		"status":    isRecent,
+		"days_old":  int(daysDiff),
+		"threshold": 90,
 	}
 
 	breakdown["components"] = components

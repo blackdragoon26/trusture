@@ -11,44 +11,44 @@ import (
 
 // AuditResult represents the result of an audit
 type AuditResult struct {
-	AuditID      string                              `json:"audit_id"`
-	ExpenditureID string                             `json:"expenditure_id"`
-	AuditorID    string                             `json:"auditor_id"`
-	Timestamp    time.Time                          `json:"timestamp"`
-	ComplianceScore float64                         `json:"compliance_score"`
-	Findings     []string                           `json:"findings"`
-	Recommendation string                           `json:"recommendation"`
-	AuditNotes   string                             `json:"audit_notes"`
-	Signature    string                             `json:"signature"`
+	AuditID         string    `json:"audit_id"`
+	ExpenditureID   string    `json:"expenditure_id"`
+	AuditorID       string    `json:"auditor_id"`
+	Timestamp       time.Time `json:"timestamp"`
+	ComplianceScore float64   `json:"compliance_score"`
+	Findings        []string  `json:"findings"`
+	Recommendation  string    `json:"recommendation"`
+	AuditNotes      string    `json:"audit_notes"`
+	Signature       string    `json:"signature"`
 }
 
 // AuditorStats represents auditor statistics
 type AuditorStats struct {
-	AuditorID               string  `json:"auditor_id"`
-	Name                    string  `json:"name"`
-	Verified                bool    `json:"verified"`
-	Specializations         []string `json:"specializations"`
-	Rating                  float64 `json:"rating"`
-	TotalAudits             int     `json:"total_audits"`
-	ApprovedAudits          int     `json:"approved_audits"`
-	ApprovalRate            string  `json:"approval_rate"`
-	AverageComplianceScore  float64 `json:"average_compliance_score"`
-	MemberSince             time.Time `json:"member_since"`
+	AuditorID              string    `json:"auditor_id"`
+	Name                   string    `json:"name"`
+	Verified               bool      `json:"verified"`
+	Specializations        []string  `json:"specializations"`
+	Rating                 float64   `json:"rating"`
+	TotalAudits            int       `json:"total_audits"`
+	ApprovedAudits         int       `json:"approved_audits"`
+	ApprovalRate           string    `json:"approval_rate"`
+	AverageComplianceScore float64   `json:"average_compliance_score"`
+	MemberSince            time.Time `json:"member_since"`
 }
 
 // Auditor represents an auditor in the system
 type Auditor struct {
-	AuditorID       string        `json:"auditor_id"`
-	Name            string        `json:"name"`
-	Credentials     interface{}   `json:"credentials"`
-	Specializations []string      `json:"specializations"` // ['financial', 'compliance', 'technical']
-	Verified        bool          `json:"verified"`
-	AuditHistory    []AuditResult `json:"audit_history"`
-	Rating          float64       `json:"rating"`
-	CreatedAt       time.Time     `json:"created_at"`
-	PublicKey       string        `json:"public_key"`
-	VerificationAuthority string  `json:"verification_authority,omitempty"`
-	VerificationDate      *time.Time `json:"verification_date,omitempty"`
+	AuditorID             string        `json:"auditor_id"`
+	Name                  string        `json:"name"`
+	Credentials           interface{}   `json:"credentials"`
+	Specializations       []string      `json:"specializations"` // ['financial', 'compliance', 'technical']
+	Verified              bool          `json:"verified"`
+	AuditHistory          []AuditResult `json:"audit_history"`
+	Rating                float64       `json:"rating"`
+	CreatedAt             time.Time     `json:"created_at"`
+	PublicKey             string        `json:"public_key"`
+	VerificationAuthority string        `json:"verification_authority,omitempty"`
+	VerificationDate      *time.Time    `json:"verification_date,omitempty"`
 }
 
 // NewAuditor creates a new auditor instance
@@ -86,8 +86,12 @@ func (a *Auditor) VerifyCredentials(verificationAuthority string) bool {
 
 // AuditExpenditure performs an audit on an expenditure transaction
 func (a *Auditor) AuditExpenditure(expenditure *transactions.ExpenditureTransaction, auditNotes string) *AuditResult {
-	// Generate audit ID
-	auditID := fmt.Sprintf("AUD-%d-%s", time.Now().Unix(), a.AuditorID[:8])
+	// Generate audit ID - handle variable length auditorIDs
+	auditorIDPart := a.AuditorID
+	if len(a.AuditorID) > 8 {
+		auditorIDPart = a.AuditorID[:8]
+	}
+	auditID := fmt.Sprintf("AUD-%d-%s", time.Now().Unix(), auditorIDPart)
 
 	findings := a.generateFindings(expenditure)
 	recommendation := a.generateRecommendation(expenditure)
@@ -197,16 +201,16 @@ func (a *Auditor) GetAuditorStats() AuditorStats {
 	}
 
 	return AuditorStats{
-		AuditorID:               a.AuditorID,
-		Name:                    a.Name,
-		Verified:                a.Verified,
-		Specializations:         a.Specializations,
-		Rating:                  a.Rating,
-		TotalAudits:             len(a.AuditHistory),
-		ApprovedAudits:          approvedCount,
-		ApprovalRate:            approvalRate,
-		AverageComplianceScore:  averageScore,
-		MemberSince:             a.CreatedAt,
+		AuditorID:              a.AuditorID,
+		Name:                   a.Name,
+		Verified:               a.Verified,
+		Specializations:        a.Specializations,
+		Rating:                 a.Rating,
+		TotalAudits:            len(a.AuditHistory),
+		ApprovedAudits:         approvedCount,
+		ApprovalRate:           approvalRate,
+		AverageComplianceScore: averageScore,
+		MemberSince:            a.CreatedAt,
 	}
 }
 

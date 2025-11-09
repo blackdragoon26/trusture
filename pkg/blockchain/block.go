@@ -11,24 +11,24 @@ import (
 
 // Validator represents a validator for a block
 type Validator struct {
-	ValidatorID     string    `json:"validator_id"`
-	Signature       string    `json:"signature"`
-	ValidationType  string    `json:"validation_type"`
-	Timestamp       time.Time `json:"timestamp"`
+	ValidatorID    string    `json:"validator_id"`
+	Signature      string    `json:"signature"`
+	ValidationType string    `json:"validation_type"`
+	Timestamp      time.Time `json:"timestamp"`
 }
 
 // Block represents a single block in the blockchain
 type Block struct {
-	Index        int           `json:"index"`
-	Timestamp    time.Time     `json:"timestamp"`
-	Data         interface{}   `json:"data"`
-	PreviousHash string        `json:"previous_hash"`
-	BlockType    string        `json:"block_type"` // 'donation' or 'expenditure'
-	Hash         string        `json:"hash"`
-	Nonce        int           `json:"nonce"`
-	Validated    bool          `json:"validated"`
-	Validators   []Validator   `json:"validators"`
-	MerkleRoot   string        `json:"merkle_root"`
+	Index        int         `json:"index"`
+	Timestamp    time.Time   `json:"timestamp"`
+	Data         interface{} `json:"data"`
+	PreviousHash string      `json:"previous_hash"`
+	BlockType    string      `json:"block_type"` // 'donation' or 'expenditure'
+	Hash         string      `json:"hash"`
+	Nonce        int         `json:"nonce"`
+	Validated    bool        `json:"validated"`
+	Validators   []Validator `json:"validators"`
+	MerkleRoot   string      `json:"merkle_root"`
 }
 
 // NewBlock creates a new block
@@ -48,7 +48,7 @@ func NewBlock(index int, timestamp time.Time, data interface{}, previousHash, bl
 		PreviousHash: previousHash,
 		BlockType:    blockType,
 		Nonce:        0,
-		Validated:    false,
+		Validated:    true, // Initial blocks are valid until tampered
 		Validators:   make([]Validator, 0),
 	}
 
@@ -120,7 +120,21 @@ func (b *Block) AddValidator(validatorID, signature, validationType string) {
 
 // IsValid checks if the block is valid
 func (b *Block) IsValid() bool {
-	return b.Hash == b.calculateHash() && b.Validated
+	// Regenerate hash and check if it matches
+	currentHash := b.calculateHash()
+
+	// Check timestamp is not in the future (allow 1 minute tolerance)
+	if b.Timestamp.After(time.Now().Add(time.Minute)) {
+		return false
+	}
+
+	// Verify hash and validation status
+	return b.Hash == currentHash && b.Validated
+}
+
+// UpdateHash recalculates and updates the block's hash after data changes
+func (b *Block) UpdateHash() {
+	b.Hash = b.calculateHash()
 }
 
 // GetValidatorsByType returns validators of a specific type

@@ -20,12 +20,12 @@ type ChainStats struct {
 
 // Blockchain represents a blockchain for NGO transactions
 type Blockchain struct {
-	NGOID         string    `json:"ngo_id"`
-	ChainType     string    `json:"chain_type"` // 'donation' or 'expenditure'
-	Chain         []*Block  `json:"chain"`
-	Difficulty    int       `json:"difficulty"`
-	PendingBlocks []*Block  `json:"pending_blocks"`
-	NetworkNodes  []string  `json:"network_nodes"`
+	NGOID         string   `json:"ngo_id"`
+	ChainType     string   `json:"chain_type"` // 'donation' or 'expenditure'
+	Chain         []*Block `json:"chain"`
+	Difficulty    int      `json:"difficulty"`
+	PendingBlocks []*Block `json:"pending_blocks"`
+	NetworkNodes  []string `json:"network_nodes"`
 	mutex         sync.RWMutex
 }
 
@@ -57,10 +57,10 @@ func NewBlockchain(ngoID, chainType string, difficulty int) *Blockchain {
 // createGenesisBlock creates the first block in the chain
 func (bc *Blockchain) createGenesisBlock() *Block {
 	genesisData := map[string]interface{}{
-		"type":      "genesis",
-		"ngo_id":    bc.NGOID,
+		"type":       "genesis",
+		"ngo_id":     bc.NGOID,
 		"chain_type": bc.ChainType,
-		"message":   fmt.Sprintf("Genesis block for %s chain of NGO %s", bc.ChainType, bc.NGOID),
+		"message":    fmt.Sprintf("Genesis block for %s chain of NGO %s", bc.ChainType, bc.NGOID),
 	}
 
 	genesisBlock := NewBlock(0, time.Now(), genesisData, "0", bc.ChainType)
@@ -83,19 +83,45 @@ func (bc *Blockchain) GetLatestBlock() *Block {
 
 // AddBlock adds a new block to the blockchain
 func (bc *Blockchain) AddBlock(newBlock *Block) bool {
+	bc.mutex.RLock()
+	if len(bc.Chain) == 0 {
+		bc.mutex.RUnlock()
+		return false
+	}
+	latestBlock := bc.Chain[len(bc.Chain)-1]
+	bc.mutex.RUnlock()
+
+	// If the block has an explicit previous hash, verify it matches
+	if newBlock.PreviousHash != "" && newBlock.PreviousHash != latestBlock.Hash {
+		log.Printf("Invalid previous hash: expected %s, got %s", latestBlock.Hash, newBlock.PreviousHash)
+		return false
+	}
+
+	// Set index and previous hash if not already set
+	if newBlock.PreviousHash == "" {
+		newBlock.PreviousHash = latestBlock.Hash
+	}
+	if newBlock.Index == 0 {
+		newBlock.Index = len(bc.Chain)
+	}
+
+	// Mine the block without holding the main lock
+	newBlock.MineBlock(bc.Difficulty)
+
+	// Acquire write lock to validate and append
 	bc.mutex.Lock()
 	defer bc.mutex.Unlock()
 
-	latestBlock := bc.Chain[len(bc.Chain)-1]
-	
-	newBlock.PreviousHash = latestBlock.Hash
-	newBlock.Index = len(bc.Chain)
-	
-	// Mine the block
-	newBlock.MineBlock(bc.Difficulty)
+	// Re-check chain state before adding
+	if len(bc.Chain) == 0 || bc.Chain[len(bc.Chain)-1].Hash != newBlock.PreviousHash {
+		log.Println("Chain state changed while mining; rejecting block")
+		return false
+	}
 
-	// Validate block before adding
+	// Final validation before adding
 	if bc.validateBlockInternal(newBlock) {
+		newBlock.Validated = true
+		newBlock.AddValidator("system", "auto", "mined")
 		bc.Chain = append(bc.Chain, newBlock)
 		return true
 	}

@@ -7,46 +7,45 @@ import (
 	"ngo-transparency-platform/pkg/polygon"
 	"ngo-transparency-platform/pkg/transactions"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
 
 // SystemStats represents platform-wide statistics
 type SystemStats struct {
-	TotalTransactions    int       `json:"total_transactions"`
-	TotalDonations       float64   `json:"total_donations"`
-	TotalExpenditures    float64   `json:"total_expenditures"`
-	PlatformFee          float64   `json:"platform_fee"`
-	CreatedAt            time.Time `json:"created_at"`
+	TotalTransactions int       `json:"total_transactions"`
+	TotalDonations    float64   `json:"total_donations"`
+	TotalExpenditures float64   `json:"total_expenditures"`
+	PlatformFee       float64   `json:"platform_fee"`
+	CreatedAt         time.Time `json:"created_at"`
 }
 
 // PlatformStats represents comprehensive platform statistics
 type PlatformStats struct {
-	TotalNGOs               int       `json:"total_ngos"`
-	TotalDonors             int       `json:"total_donors"`
-	TotalAuditors           int       `json:"total_auditors"`
-	TotalTransactions       int       `json:"total_transactions"`
-	TotalDonations          float64   `json:"total_donations"`
-	TotalExpenditures       float64   `json:"total_expenditures"`
-	PlatformFeeCollected    float64   `json:"platform_fee_collected"`
-	VerifiedNGOs            int       `json:"verified_ngos"`
-	VerifiedDonors          int       `json:"verified_donors"`
-	VerifiedAuditors        int       `json:"verified_auditors"`
-	KYCAuthorities          int       `json:"kyc_authorities"`
-	DaysActive              int       `json:"days_active"`
-	AverageNGORating        float64   `json:"average_ngo_rating"`
-	Categories              []string  `json:"categories"`
+	TotalNGOs            int      `json:"total_ngos"`
+	TotalDonors          int      `json:"total_donors"`
+	TotalAuditors        int      `json:"total_auditors"`
+	TotalTransactions    int      `json:"total_transactions"`
+	TotalDonations       float64  `json:"total_donations"`
+	TotalExpenditures    float64  `json:"total_expenditures"`
+	PlatformFeeCollected float64  `json:"platform_fee_collected"`
+	VerifiedNGOs         int      `json:"verified_ngos"`
+	VerifiedDonors       int      `json:"verified_donors"`
+	VerifiedAuditors     int      `json:"verified_auditors"`
+	KYCAuthorities       int      `json:"kyc_authorities"`
+	DaysActive           int      `json:"days_active"`
+	AverageNGORating     float64  `json:"average_ngo_rating"`
+	Categories           []string `json:"categories"`
 }
 
 // NGOTransparencyPlatform is the main platform orchestrator
 type NGOTransparencyPlatform struct {
-	NGOs               map[string]*entities.NGO      `json:"ngos"`
-	Donors             map[string]*entities.Donor    `json:"donors"`
-	Auditors           map[string]*entities.Auditor  `json:"auditors"`
-	PolygonIntegration *polygon.PolygonIntegration   `json:"polygon_integration"`
-	SystemStats        SystemStats                   `json:"system_stats"`
-	KYCAuthorities     map[string]bool               `json:"kyc_authorities"`
+	NGOs               map[string]*entities.NGO     `json:"ngos"`
+	Donors             map[string]*entities.Donor   `json:"donors"`
+	Auditors           map[string]*entities.Auditor `json:"auditors"`
+	PolygonIntegration *polygon.PolygonIntegration  `json:"polygon_integration"`
+	SystemStats        SystemStats                  `json:"system_stats"`
+	KYCAuthorities     map[string]bool              `json:"kyc_authorities"`
 	mutex              sync.RWMutex
 }
 
@@ -71,7 +70,7 @@ func NewNGOTransparencyPlatform() *NGOTransparencyPlatform {
 func (p *NGOTransparencyPlatform) InitializePolygon(providerURL, privateKey string, gasLimit int64, gasPrice *big.Int) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	
+
 	p.PolygonIntegration = polygon.NewPolygonIntegration(providerURL, privateKey, gasLimit, gasPrice)
 }
 
@@ -214,7 +213,7 @@ func (p *NGOTransparencyPlatform) ProcessDonation(donorID, ngoID string, amount 
 			"amount":       netAmount,
 			"platform_fee": platformFee,
 		}
-		
+
 		anchor, err := p.PolygonIntegration.AnchorBlockHash(result.BlockHash, ngoID, "donation", additionalData)
 		if err == nil {
 			result.EBill = map[string]interface{}{
@@ -225,14 +224,14 @@ func (p *NGOTransparencyPlatform) ProcessDonation(donorID, ngoID string, amount 
 	}
 
 	return map[string]interface{}{
-		"success":       result.Success,
-		"block_hash":    result.BlockHash,
+		"success":        result.Success,
+		"block_hash":     result.BlockHash,
 		"transaction_id": result.TransactionID,
-		"block_index":   result.BlockIndex,
-		"e_bill":        result.EBill,
-		"platform_fee":  platformFee,
-		"net_amount":    netAmount,
-		"gross_amount":  amount,
+		"block_index":    result.BlockIndex,
+		"e_bill":         result.EBill,
+		"platform_fee":   platformFee,
+		"net_amount":     netAmount,
+		"gross_amount":   amount,
 	}, nil
 }
 
@@ -266,22 +265,33 @@ func (p *NGOTransparencyPlatform) ProcessExpenditure(ngoID string, expenditureDa
 	// Create invoice details (simplified)
 	invoiceDetails := transactions.InvoiceDetails{
 		InvoiceNumber: fmt.Sprintf("INV-%d", time.Now().Unix()),
-		GSTIN:        "27ABCDE1234F1Z5", // Example GSTIN
-		VendorName:   "Test Vendor",
-		InvoiceDate:  time.Now(),
+		GSTIN:         "27ABCDE1234F1Z5", // Example GSTIN
+		VendorName:    "Test Vendor",
+		VendorGSTIN:   "29ABCDE1234F1Z3", // Example Vendor GSTIN
+		InvoiceDate:   time.Now(),
+		Documents:     []string{"invoice.pdf"},
 	}
 
-	expenditure := transactions.NewExpenditureTransaction(ngoID, amount, category, description, invoiceDetails, nil)
+	// Create expenditure transaction
+	expenditure := transactions.NewExpenditureTransaction(ngoID, amount, category, description, invoiceDetails, []transactions.Attachment{
+		{
+			Filename:   "invoice.pdf",
+			Hash:       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			Type:       "application/pdf",
+			UploadedAt: time.Now(),
+		},
+	})
 
 	// Auditor performs audit
 	auditResult := auditor.AuditExpenditure(expenditure, "")
 
-	// Auto-approve based on audit recommendation
-	shouldApprove := strings.Contains(strings.ToLower(auditResult.Recommendation), "approve")
+	// Auto-approve based on audit result
+	shouldApprove := auditResult.ComplianceScore >= 70.0 // Require at least 70% compliance
 	expenditure.ValidateByAuditor(auditorID, shouldApprove, auditResult.Recommendation, &auditResult.ComplianceScore)
 
 	if !shouldApprove {
-		return nil, fmt.Errorf("expenditure rejected by auditor: %s", auditResult.Recommendation)
+		return nil, fmt.Errorf("expenditure rejected by auditor (score: %.2f%%): %s",
+			auditResult.ComplianceScore, auditResult.Recommendation)
 	}
 
 	result, err := ngo.ProcessExpenditure(expenditure)
@@ -299,7 +309,7 @@ func (p *NGOTransparencyPlatform) ProcessExpenditure(ngoID string, expenditureDa
 			"amount":   amount,
 			"category": category,
 		}
-		
+
 		anchor, err := p.PolygonIntegration.AnchorBlockHash(result.BlockHash, ngoID, "expenditure", additionalData)
 		if err == nil {
 			result.EBill = map[string]interface{}{
@@ -309,11 +319,11 @@ func (p *NGOTransparencyPlatform) ProcessExpenditure(ngoID string, expenditureDa
 	}
 
 	return map[string]interface{}{
-		"success":       result.Success,
-		"block_hash":    result.BlockHash,
+		"success":        result.Success,
+		"block_hash":     result.BlockHash,
 		"transaction_id": result.TransactionID,
-		"block_index":   result.BlockIndex,
-		"audit_result":  auditResult,
+		"block_index":    result.BlockIndex,
+		"audit_result":   auditResult,
 	}, nil
 }
 
@@ -466,10 +476,10 @@ func (p *NGOTransparencyPlatform) GetDonorDashboard(donorID string) (map[string]
 	}
 
 	return map[string]interface{}{
-		"stats":                    stats,
-		"recent_donations":         recentDonations,
+		"stats":                     stats,
+		"recent_donations":          recentDonations,
 		"current_year_tax_benefits": currentYearTaxBenefits,
-		"preferred_ngos":           preferredNGOs,
+		"preferred_ngos":            preferredNGOs,
 	}, nil
 }
 
